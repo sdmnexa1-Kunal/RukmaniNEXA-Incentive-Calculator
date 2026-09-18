@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071321">
+  <title>Rukmani Motors - Incentive Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="page">
+    <header class="topbar">
+      <div>
+        <div class="brand">RUKMANI MOTORS <span>• Incentive</span></div>
+        <div class="subtitle">RM Incentive Calculator</div>
+      </div>
+      <div class="month">September 2026</div>
+    </header>
+
+    <section class="hero">
+      <div class="eyebrow">Your total incentive this month</div>
+      <div class="total" id="grandTotal">₹0</div>
+      <div class="summary"><strong id="vehicleCount">0</strong> vehicles sold — add your first sale below</div>
+    </section>
+
+    <section class="section">
+      <h2>Add a vehicle sold</h2>
+      <div class="card form-card">
+        <label for="model">Model</label>
+        <select id="model">
+          <option value="">Select model</option>
+        </select>
+
+        <label for="variant">Variant</label>
+        <select id="variant" disabled>
+          <option value="">Select model first</option>
+        </select>
+
+        <div class="preview" id="preview" hidden>
+          <div><span>Main incentive</span><strong id="pMain">₹0</strong></div>
+          <div><span>Step-up incentive</span><strong id="pStep">₹0</strong></div>
+          <div><span>Spot incentive 1</span><strong id="pSpot1">₹0</strong></div>
+          <div><span>Spot incentive 2</span><strong id="pSpot2">₹0</strong></div>
+          <div class="preview-total"><span>Vehicle incentive</span><strong id="pTotal">₹0</strong></div>
+        </div>
+
+        <button id="addBtn" class="primary" disabled>Add vehicle</button>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <h2>Vehicles sold</h2>
+        <span id="countLabel">0</span>
+      </div>
+      <div class="card sales-card" id="salesList">
+        <div class="empty">
+          <div class="empty-icon">—</div>
+          <div>No vehicles added yet this month</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section breakdown-section" id="breakdownSection" hidden>
+      <h2>Incentive breakdown</h2>
+      <div class="card breakdown" id="breakdown"></div>
+    </section>
+
+    <footer>
+      <span>Rukmani Motors • September 2026</span>
+      <span>Anonymous calculator — no RM name required</span>
+    </footer>
+  </main>
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
