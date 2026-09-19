@@ -22,14 +22,14 @@ function resetSelector(){model.value='';variant.innerHTML='<option value="">Sele
 function removeSale(id){const x=state.sales.find(x=>x.id===id);state.sales=state.sales.filter(x=>x.id!==id);if(x){let n=0;state.sales.forEach(s=>{if(s.model===x.model){n++;s.step=STEP_UP_TIERS_LOCAL[Math.min(n-1,4)]}})}render()}
 $('resetBtn').onclick=()=>{if(!state.sales.length||confirm('Clear all vehicles for this month?')){state.sales=[];resetSelector();render()}};
 const VEHICLE_IMAGES={
-  'NEW BALENO':'vehicle-images/baleno.webp',
-  'Old BALENO':'vehicle-images/baleno.webp',
-  'Fronx':'vehicle-images/fronx.jpg',
-  'GRAND VITARA':'vehicle-images/grand-vitara.jpg',
-  'XL6':'vehicle-images/xl6.png',
-  'INVICTO':'vehicle-images/invicto.jpg',
-  'JIMNY':'vehicle-images/jimny.jpg',
-  'E-VITARA':'vehicle-images/e-vitara.png'
+  'NEW BALENO':'vehicle-images/Baleno.png',
+  'Old BALENO':'vehicle-images/Baleno.png',
+  'Fronx':'vehicle-images/Fronx.png',
+  'GRAND VITARA':'vehicle-images/GrandVitara.png',
+  'XL6':'vehicle-images/XL6.png',
+  'INVICTO':'vehicle-images/Invicto.png',
+  'JIMNY':'vehicle-images/Jimny.png',
+  'E-VITARA':'vehicle-images/eVitara.png'
 };
 function renderModelVisual(m){
   const el=$('modelVisual');
