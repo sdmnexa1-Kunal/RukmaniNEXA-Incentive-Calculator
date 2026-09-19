@@ -21,7 +21,26 @@ $('addBtn').onclick=()=>{const x=INCENTIVES_LOCAL.find(x=>x.model===model.value&
 function resetSelector(){model.value='';variant.innerHTML='<option value="">Select variant</option>';variant.disabled=true;$('addBtn').disabled=true;$('preview').hidden=true;renderModelVisual('')}
 function removeSale(id){const x=state.sales.find(x=>x.id===id);state.sales=state.sales.filter(x=>x.id!==id);if(x){let n=0;state.sales.forEach(s=>{if(s.model===x.model){n++;s.step=STEP_UP_TIERS_LOCAL[Math.min(n-1,4)]}})}render()}
 $('resetBtn').onclick=()=>{if(!state.sales.length||confirm('Clear all vehicles for this month?')){state.sales=[];resetSelector();render()}};
-function renderModelVisual(m){const el=$('modelVisual');if(!m){el.innerHTML='<div class="visual-placeholder"><span>SELECT A MODEL</span><b>Vehicle preview</b></div>';return}el.innerHTML=`<div class="vehicle-art"><div class="vehicle-glow"></div><div class="vehicle-shape"></div><div class="vehicle-label">${esc(m)}</div><small>Model selected</small></div>`}
+const VEHICLE_IMAGES={
+  'NEW BALENO':'vehicle-images/baleno.webp',
+  'Old BALENO':'vehicle-images/baleno.webp',
+  'Fronx':'vehicle-images/fronx.jpg',
+  'GRAND VITARA':'vehicle-images/grand-vitara.jpg',
+  'XL6':'vehicle-images/xl6.png',
+  'INVICTO':'vehicle-images/invicto.jpg',
+  'JIMNY':'vehicle-images/jimny.jpg',
+  'E-VITARA':'vehicle-images/e-vitara.png'
+};
+function renderModelVisual(m){
+  const el=$('modelVisual');
+  if(!m){el.innerHTML='<div class="visual-placeholder"><span>SELECT A MODEL</span><b>Vehicle preview</b></div>';return}
+  const src=VEHICLE_IMAGES[m];
+  if(src){
+    el.innerHTML=`<div class="vehicle-photo"><img src="${src}" alt="${esc(m)} vehicle"><div class="vehicle-photo-overlay"><strong>${esc(m)}</strong><small>Model selected</small></div></div>`;
+  }else{
+    el.innerHTML=`<div class="vehicle-art"><div class="vehicle-glow"></div><div class="vehicle-shape"></div><div class="vehicle-label">${esc(m)}</div><small>Model selected</small></div>`;
+  }
+}
 function showAnnouncement(){if(!state.announcements.length)return;const now=new Date();const a=state.announcements.find(x=>new Date(x.starts_at)<=now&&(!x.ends_at||new Date(x.ends_at)>=now));if(!a)return;const key='rukmani_seen_'+a.id;let show=true;if(a.display_frequency==='once_per_announcement'&&localStorage.getItem(key))show=false;if(a.display_frequency==='once_per_day'&&localStorage.getItem(key)===new Date().toISOString().slice(0,10))show=false;if(!show)return;$('announcementTitle').textContent=a.title;$('announcementMessage').textContent=a.message||'';if(a.image_url){$('announcementImage').src=a.image_url;$('announcementImage').hidden=false}else $('announcementImage').hidden=true;$('announcementBackdrop').hidden=false;const mark=()=>{if(a.display_frequency==='once_per_announcement')localStorage.setItem(key,'1');if(a.display_frequency==='once_per_day')localStorage.setItem(key,new Date().toISOString().slice(0,10));$('announcementBackdrop').hidden=true};$('closeAnnouncement').onclick=mark;$('closeAnnouncement2').onclick=mark}
 loadMaster();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
