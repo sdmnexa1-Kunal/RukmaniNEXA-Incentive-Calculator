@@ -2,35 +2,48 @@ const $=id=>document.getElementById(id), money=n=>'₹'+Number(n||0).toLocaleStr
 let INCENTIVES_LOCAL=INCENTIVES, MONTH_LOCAL=MONTH, STEP_UP_TIERS_LOCAL=STEP_UP_TIERS; const state={sales:[],announcements:[]};
 const model=$('model'),variant=$('variant');
 async function loadMaster(){
+ if(!window.supabase||window.SUPABASE_URL.startsWith('YOUR_')){init();return}
+ const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
+
+ // Load incentive data independently.
  try{
-  if(!window.supabase||window.SUPABASE_URL.startsWith('YOUR_')) return;
-  const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
   const {data:s,error:se}=await sb.from('incentive_schemes')
-    .select('id,month_label,step_up_enabled,step_up_tiers')
-    .eq('is_published',true).order('published_at',{ascending:false}).limit(1).maybeSingle();
+   .select('id,month_label,step_up_enabled,step_up_tiers')
+   .eq('is_published',true).order('published_at',{ascending:false}).limit(1).maybeSingle();
   if(se) throw se;
   if(s){
-    const {data:items,error:ie}=await sb.from('incentive_items')
-      .select('model,variant,incentive,spot1,spot2,main_incentives,spot_incentives')
-      .eq('scheme_id',s.id);
-    if(ie) throw ie;
-    if(items?.length){
-      INCENTIVES_LOCAL=items.map(x=>{
-        const mains=Array.isArray(x.main_incentives)&&x.main_incentives.length
-          ? x.main_incentives.map(Number) : [Number(x.incentive||0)];
-        const spots=Array.isArray(x.spot_incentives)
-          ? x.spot_incentives.map(Number)
-          : [Number(x.spot1||0),Number(x.spot2||0)].filter(v=>v!==0);
-        return {...x,main_incentives:mains,spot_incentives:spots,main:mains.reduce((a,v)=>a+v,0),spot1:spots[0]||0,spot2:spots[1]||0,spotTotal:spots.reduce((a,v)=>a+v,0)};
-      });
-      MONTH_LOCAL=s.month_label;
-      STEP_UP_TIERS_LOCAL=s.step_up_enabled===false ? [] : (Array.isArray(s.step_up_tiers)&&s.step_up_tiers.length?s.step_up_tiers.map(Number):STEP_UP_TIERS_LOCAL);
-    }
+   const {data:items,error:ie}=await sb.from('incentive_items')
+    .select('model,variant,incentive,spot1,spot2,main_incentives,spot_incentives')
+    .eq('scheme_id',s.id);
+   if(ie) throw ie;
+   if(items?.length){
+    INCENTIVES_LOCAL=items.map(x=>{
+     const mains=Array.isArray(x.main_incentives)&&x.main_incentives.length
+      ? x.main_incentives.map(Number) : [Number(x.incentive||0)];
+     const spots=Array.isArray(x.spot_incentives)
+      ? x.spot_incentives.map(Number)
+      : [Number(x.spot1||0),Number(x.spot2||0)].filter(v=>v!==0);
+     return {...x,main_incentives:mains,spot_incentives:spots,main:mains.reduce((a,v)=>a+v,0),spot1:spots[0]||0,spot2:spots[1]||0,spotTotal:spots.reduce((a,v)=>a+v,0)};
+    });
+    MONTH_LOCAL=s.month_label;
+    STEP_UP_TIERS_LOCAL=s.step_up_enabled===false ? [] : (Array.isArray(s.step_up_tiers)&&s.step_up_tiers.length?s.step_up_tiers.map(Number):STEP_UP_TIERS_LOCAL);
+   }
   }
-  const {data:a}=await sb.from('announcements').select('*').eq('is_active',true).order('created_at',{ascending:false});
-  state.announcements=a||[]; showAnnouncement();
- }catch(e){console.warn('Master data unavailable; using local data.',e)}
+ }catch(e){console.warn('Master incentive data unavailable; using local data.',e)}
+
+ // Load announcements separately. A scheme error must not prevent popups.
+ try{
+  const {data:a,error:ae}=await sb.from('announcements')
+   .select('*').eq('is_active',true).order('created_at',{ascending:false});
+  if(ae) throw ae;
+  state.announcements=a||[];
+ }catch(e){
+  state.announcements=[];
+  console.warn('Announcement data unavailable.',e);
+ }
+
  init();
+ showAnnouncement();
 }
 function init(){ $('monthPill').textContent=MONTH_LOCAL; model.innerHTML='<option value="">Select model</option>';[...new Set(INCENTIVES_LOCAL.map(x=>x.model))].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;model.appendChild(o)});render(); }
 function countModel(m){return state.sales.filter(x=>x.model===m).length}
