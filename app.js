@@ -1,109 +1,57 @@
-const state = { sales: [] };
+const $=id=>document.getElementById(id);
+const money=n=>'₹'+Number(n||0).toLocaleString('en-IN');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+const state={sales:[]};
+const models=[...new Set(INCENTIVES.map(x=>x.model))];
+const model=$('model'), variant=$('variant');
 
-const modelEl = document.getElementById('model');
-const variantEl = document.getElementById('variant');
-const addBtn = document.getElementById('addBtn');
-const preview = document.getElementById('preview');
+$('monthPill').textContent=MONTH;
 
-const money = n => '₹' + Number(n || 0).toLocaleString('en-IN');
+models.forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;model.appendChild(o)});
 
-const models = [...new Set(INCENTIVES.map(x => x.model))];
-
-models.forEach(model => {
-  const o = document.createElement('option');
-  o.value = model; o.textContent = model;
-  modelEl.appendChild(o);
-});
-
-modelEl.addEventListener('change', () => {
-  variantEl.innerHTML = '<option value="">Select variant</option>';
-  variantEl.disabled = !modelEl.value;
-  addBtn.disabled = true;
-  preview.hidden = true;
-
-  if (!modelEl.value) return;
-
-  INCENTIVES.filter(x => x.model === modelEl.value).forEach(item => {
-    const o = document.createElement('option');
-    o.value = item.variant; o.textContent = item.variant;
-    variantEl.appendChild(o);
-  });
-});
-
-variantEl.addEventListener('change', () => {
-  const item = getSelected();
-  const valid = !!item;
-  addBtn.disabled = !valid;
-  preview.hidden = !valid;
-  if (valid) {
-    document.getElementById('pMain').textContent = money(item.main);
-    document.getElementById('pStep').textContent = money(item.stepUp);
-    document.getElementById('pSpot1').textContent = money(item.spot1);
-    document.getElementById('pSpot2').textContent = money(item.spot2);
-    document.getElementById('pTotal').textContent = money(item.main + item.stepUp + item.spot1 + item.spot2);
-  }
-});
-
-function getSelected() {
-  return INCENTIVES.find(x => x.model === modelEl.value && x.variant === variantEl.value);
+function countModel(m){return state.sales.filter(x=>x.model===m).length}
+function stepFor(m){const n=countModel(m)+1;return STEP_UP_TIERS[Math.min(n-1,STEP_UP_TIERS.length-1)]}
+function totals(){return state.sales.reduce((a,x)=>{a.main+=x.main;a.step+=x.step;a.spot+=x.spot1+x.spot2;return a},{main:0,step:0,spot:0})}
+function renderTiers(){
+  const counts={};state.sales.forEach(x=>counts[x.model]=(counts[x.model]||0)+1);
+  const max=Object.values(counts).length?Math.max(...Object.values(counts)):0;
+  $('tiers').innerHTML=STEP_UP_TIERS.map((v,i)=>`<div class="tier ${max===i+1?'active':''}"><small>${i<4?`${i+1}${i===0?'st':i===1?'nd':i===2?'rd':'th'} car`:'5th+ car'}</small><b>${money(v)}</b></div>`).join('');
+  const next=max<5?STEP_UP_TIERS[max]:STEP_UP_TIERS[4];$('nextMilestone').textContent=money(next);
 }
-
-addBtn.addEventListener('click', () => {
-  const item = getSelected();
-  if (!item) return;
-  state.sales.push({...item, id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString()});
-  render();
-  modelEl.value = '';
-  variantEl.innerHTML = '<option value="">Select model first</option>';
-  variantEl.disabled = true;
-  addBtn.disabled = true;
-  preview.hidden = true;
-});
-
-function removeSale(id) {
-  state.sales = state.sales.filter(x => x.id !== id);
+function render(){
+  const t=totals(), n=state.sales.length;
+  $('grandTotal').textContent=money(t.main+t.step+t.spot);$('headTotal').textContent=money(t.main+t.step+t.spot);
+  $('vehicleCount').textContent=n;$('countText').textContent=`${n} ${n===1?'vehicle':'vehicles'}`;
+  $('statusText').textContent=n?'ACTIVE':'START SELLING';
+  $('sumMain').textContent=money(t.main);$('sumStep').textContent=money(t.step);$('sumSpot').textContent=money(t.spot);$('sumTotal').textContent=money(t.main+t.step+t.spot);
+  renderTiers();
+  $('emptyTable').style.display=n?'none':'block';
+  $('summary').hidden=!n;
+  $('salesBody').innerHTML=state.sales.map((x,i)=>`<tr>
+    <td>${i+1}</td><td class="model-name">${esc(x.model)}</td><td class="variant-name">${esc(x.variant)}</td>
+    <td>${money(x.main+x.spot1+x.spot2)}</td><td class="step">${money(x.step)}</td><td>${money(x.main+x.spot1+x.spot2+x.step)}</td>
+    <td><button class="delete" data-id="${x.id}" title="Remove sale">♜</button></td>
+  </tr>`).join('');
+  document.querySelectorAll('.delete').forEach(b=>b.onclick=()=>removeSale(b.dataset.id));
+}
+model.onchange=()=>{
+  variant.innerHTML='<option value="">Select variant</option>';variant.disabled=!model.value;$('addBtn').disabled=true;$('preview').hidden=true;
+  if(model.value)INCENTIVES.filter(x=>x.model===model.value).forEach(x=>{const o=document.createElement('option');o.value=x.variant;o.textContent=x.variant;variant.appendChild(o)});
+};
+variant.onchange=()=>{
+  const x=INCENTIVES.find(x=>x.model===model.value&&x.variant===variant.value);
+  $('addBtn').disabled=!x;$('preview').hidden=!x;
+  if(x){$('pMain').textContent=money(x.main);$('pSpot1').textContent=money(x.spot1);$('pSpot2').textContent=money(x.spot2)}
+};
+$('addBtn').onclick=()=>{
+  const x=INCENTIVES.find(x=>x.model===model.value&&x.variant===variant.value);if(!x)return;
+  state.sales.push({...x,step:stepFor(x.model),id:String(Date.now()+Math.random())});resetSelector();render();
+};
+function resetSelector(){model.value='';variant.innerHTML='<option value="">Select variant</option>';variant.disabled=true;$('addBtn').disabled=true;$('preview').hidden=true}
+function removeSale(id){
+  const x=state.sales.find(x=>x.id===id);state.sales=state.sales.filter(x=>x.id!==id);
+  if(x){let n=0;state.sales.forEach(s=>{if(s.model===x.model){n++;s.step=STEP_UP_TIERS[Math.min(n-1,4)]}})}
   render();
 }
-
-function render() {
-  const total = state.sales.reduce((sum, x) => sum + x.main + x.stepUp + x.spot1 + x.spot2, 0);
-  document.getElementById('grandTotal').textContent = money(total);
-  document.getElementById('vehicleCount').textContent = state.sales.length;
-  document.getElementById('countLabel').textContent = state.sales.length;
-
-  const list = document.getElementById('salesList');
-  if (!state.sales.length) {
-    list.innerHTML = '<div class="empty"><div class="empty-icon">—</div><div>No vehicles added yet this month</div></div>';
-    document.getElementById('breakdownSection').hidden = true;
-    return;
-  }
-
-  list.innerHTML = state.sales.map((x, i) => {
-    const vTotal = x.main + x.stepUp + x.spot1 + x.spot2;
-    return `<div class="sale">
-      <div><div class="sale-model">${escapeHtml(x.model)}</div>
-      <div class="sale-variant">${escapeHtml(x.variant)}</div></div>
-      <div class="sale-right"><div class="sale-amount">${money(vTotal)}</div>
-      <button class="remove" onclick="removeSale('${x.id}')">Remove</button></div>
-    </div>`;
-  }).join('');
-
-  const main = state.sales.reduce((s,x)=>s+x.main,0);
-  const step = state.sales.reduce((s,x)=>s+x.stepUp,0);
-  const s1 = state.sales.reduce((s,x)=>s+x.spot1,0);
-  const s2 = state.sales.reduce((s,x)=>s+x.spot2,0);
-
-  document.getElementById('breakdown').innerHTML = `
-    <div><span>Main incentive</span><strong>${money(main)}</strong></div>
-    <div><span>Step-up incentive</span><strong>${money(step)}</strong></div>
-    <div><span>Spot incentive 1</span><strong>${money(s1)}</strong></div>
-    <div><span>Spot incentive 2</span><strong>${money(s2)}</strong></div>
-    <div class="gold"><span>Total incentive</span><strong>${money(total)}</strong></div>`;
-  document.getElementById('breakdownSection').hidden = false;
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-}
-
+$('resetBtn').onclick=()=>{if(!state.sales.length||confirm('Clear all vehicles for this month?')){state.sales=[];resetSelector();render()}};
 render();
