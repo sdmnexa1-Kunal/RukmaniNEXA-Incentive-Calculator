@@ -1,16 +1,1 @@
-{
-  "name": "Rukmani Motors NEXA Incentive Calculator",
-  "short_name": "Rukmani Incentive",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#050607",
-  "theme_color": "#050607",
-  "icons": [
-    {
-      "src": "icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
-    }
-  ]
-}
+{"name":"Rukmani Motors NEXA Incentive System","short_name":"Rukmani NEXA","start_url":"./","display":"standalone","background_color":"#050607","theme_color":"#050607","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

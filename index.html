@@ -1,120 +1,17 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#050607">
-<meta name="description" content="Rukmani Motors NEXA Sales Incentive Calculator">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css">
-<title>Rukmani Motors NEXA • Incentive Calculator</title>
-</head>
-<body>
-<div class="site">
-  <header class="nav">
-    <a class="brand" href="#home" aria-label="Rukmani Motors NEXA home">
-      <img src="nexa-logo.jpg" alt="Maruti Suzuki NEXA">
-      <div><div class="brand-rukmani">RUKMANI MOTORS</div><div class="brand-sub">NEXA</div></div>
-    </a>
-    <nav>
-      <a class="active" href="#home">Home</a>
-      <a href="#calculator">Incentive Calculator</a>
-      <a href="#scheme">Scheme Details</a>
-      <a href="#models">Models</a>
-      <a href="#contact">Contact</a>
-    </nav>
-    <div class="date-pill"><span>▣</span><span id="monthPill">September 2026</span></div>
-  </header>
-
-  <section class="hero" id="home">
-    <img class="hero-bg" src="showroom.jpg" alt="NEXA showroom at night">
-    <div class="hero-overlay"></div>
-    <div class="hero-copy">
-      <div class="hero-rukmani">RUKMANI MOTORS</div>
-      <div class="hero-nexa">NEXA</div>
-      <div class="hero-line"></div>
-      <div class="tagline">CREATE. INSPIRE. DRIVE A BETTER TOMORROW.</div>
-    </div>
-    <div class="hero-side">EXPERIENCE<br>A WORLD<br>ABOVE</div>
-  </section>
-
-  <main>
-    <section class="top-grid" id="calculator">
-      <div class="total-card card">
-        <div class="eyebrow">YOUR TOTAL INCENTIVE</div>
-        <div class="big-total" id="grandTotal">₹0</div>
-        <div class="stats">
-          <div><strong id="vehicleCount">0</strong><span>VEHICLES SOLD</span></div>
-          <div><strong id="nextMilestone">₹1,000</strong><span>NEXT MILESTONE</span></div>
-          <div><strong id="statusText">START SELLING</strong><span>STATUS</span></div>
-        </div>
-      </div>
-      <div class="tiers-card card" id="scheme">
-        <div class="eyebrow">STEP-UP INCENTIVE TIERS</div>
-        <div class="tiers" id="tiers"></div>
-        <div class="tier-note">ⓘ Step-up incentive is applicable <b>per model</b>.<br>Each model has its own count (e.g. 2 Baleno = 1st + 2nd tier).</div>
-      </div>
-    </section>
-
-    <section class="work-grid">
-      <div class="add-card card">
-        <div class="section-title">ADD A VEHICLE SOLD</div>
-        <div class="form-grid">
-          <label>Model<select id="model"><option value="">Select model</option></select></label>
-          <label>Variant<select id="variant" disabled><option value="">Select variant</option></select></label>
-        </div>
-        <div class="incentive-preview" id="preview" hidden>
-          <span>Main <b id="pMain">₹0</b></span>
-          <span>Spot 1 <b id="pSpot1">₹0</b></span>
-          <span>Spot 2 <b id="pSpot2">₹0</b></span>
-        </div>
-        <button class="gold-btn" id="addBtn" disabled><span>＋</span> Add to this month</button>
-      </div>
-
-      <div class="promo-card card">
-        <div class="promo-copy">CRAFTED<br>FOR THOSE<br>WHO EXPECT<br>MORE<div></div></div>
-        <div class="car-silhouette"></div>
-      </div>
-    </section>
-
-    <section class="vehicles card">
-      <div class="vehicles-head">
-        <div class="section-title">VEHICLES THIS MONTH</div>
-        <div><b id="countText">0 vehicles</b><span class="sep">|</span> Total Incentive: <strong id="headTotal">₹0</strong></div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Model</th><th>Variant</th><th>Model Incentive</th><th>Step-up Incentive</th><th>Total</th><th>Action</th></tr></thead>
-          <tbody id="salesBody"></tbody>
-        </table>
-      </div>
-      <div class="empty-table" id="emptyTable">No vehicles added yet. Use the calculator above to add a sale.</div>
-    </section>
-
-    <section class="summary card" id="summary" hidden>
-      <div class="section-title">INCENTIVE BREAKDOWN</div>
-      <div class="summary-grid">
-        <div><span>Model incentives</span><b id="sumMain">₹0</b></div>
-        <div><span>Step-up incentives</span><b id="sumStep">₹0</b></div>
-        <div><span>Spot incentives</span><b id="sumSpot">₹0</b></div>
-        <div class="grand"><span>TOTAL</span><b id="sumTotal">₹0</b></div>
-      </div>
-    </section>
-
-    <div class="actions">
-      <button class="clear-btn" id="resetBtn">↻ &nbsp;Clear all vehicles and start over</button>
-      <a class="admin-link" href="admin.html">Monthly Excel Update</a>
-    </div>
-  </main>
-
-  <footer id="contact">
-    <div class="footer-brand"><img src="nexa-logo.jpg" alt=""><div><b>MARUTI SUZUKI NEXA</b><small>RUKMANI MOTORS</small></div></div>
-    <div><b>SALES INCENTIVE CALCULATOR</b><small>DRIVEN BY PEOPLE. POWERED BY TRUST.</small></div>
-    <div><small>CREATE. INSPIRE. DRIVE A BETTER TOMORROW.</small></div>
-  </footer>
-</div>
-<script src="data.js"></script>
-<script src="app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#050607"><meta name="description" content="Rukmani Motors NEXA Sales Incentive Calculator">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon.svg"><link rel="stylesheet" href="style.css">
+<title>Rukmani Motors NEXA • Incentive System</title></head><body>
+<div class="site"><header class="nav"><a class="brand" href="#home"><img src="nexa-logo.jpg"><div><div class="brand-rukmani">RUKMANI MOTORS</div><div class="brand-sub">NEXA</div></div></a><nav><a class="active" href="#home">Home</a><a href="#calculator">Calculator</a><a href="#scheme">Scheme</a><a href="#models">Models</a><a href="#contact">Contact</a></nav><div class="date-pill" id="monthPill">September 2026</div></header>
+<section class="hero" id="home"><img class="hero-bg" src="showroom.jpg"><div class="hero-overlay"></div><div class="hero-copy"><div class="hero-rukmani">RUKMANI MOTORS</div><div class="hero-nexa">NEXA</div><div class="hero-line"></div><div class="tagline">CREATE. INSPIRE. DRIVE A BETTER TOMORROW.</div></div><div class="hero-side">EXPERIENCE<br>A WORLD<br>ABOVE</div></section>
+<main>
+<section class="top-grid" id="calculator"><div class="total-card card"><div class="eyebrow">YOUR TOTAL INCENTIVE</div><div class="big-total" id="grandTotal">₹0</div><div class="stats"><div><strong id="vehicleCount">0</strong><span>VEHICLES SOLD</span></div><div><strong id="nextMilestone">₹1,000</strong><span>NEXT STEP-UP</span></div><div><strong id="statusText">START SELLING</strong><span>STATUS</span></div></div></div><div class="tiers-card card" id="scheme"><div class="eyebrow">STEP-UP INCENTIVE TIERS</div><div class="tiers" id="tiers"></div><div class="tier-note">ⓘ Step-up is calculated <b>separately for each model</b>.</div></div></section>
+<section class="work-grid"><div class="add-card card"><div class="section-title">ADD A VEHICLE SOLD</div><div class="form-grid"><label>Model<select id="model"><option value="">Select model</option></select></label><label>Variant<select id="variant" disabled><option value="">Select variant</option></select></label></div><div class="model-visual" id="modelVisual"><div class="visual-placeholder"><span>SELECT A MODEL</span><b>Vehicle preview</b></div></div><div class="incentive-preview" id="preview" hidden><span>Main <b id="pMain">₹0</b></span><span>Spot 1 <b id="pSpot1">₹0</b></span><span>Spot 2 <b id="pSpot2">₹0</b></span></div><button class="gold-btn" id="addBtn" disabled>＋ Add to this month</button></div><div class="promo-card card"><div class="promo-copy">CRAFTED<br>FOR THOSE<br>WHO EXPECT<br>MORE<div></div></div><div class="car-silhouette"></div></div></section>
+<section class="vehicles card"><div class="vehicles-head"><div class="section-title">VEHICLES THIS MONTH</div><div><b id="countText">0 vehicles</b><span class="sep">|</span> Total Incentive: <strong id="headTotal">₹0</strong></div></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Model</th><th>Variant</th><th>Model Incentive</th><th>Step-up</th><th>Total</th><th>Action</th></tr></thead><tbody id="salesBody"></tbody></table></div><div class="empty-table" id="emptyTable">No vehicles added yet.</div></section>
+<section class="summary card" id="summary" hidden><div class="section-title">INCENTIVE BREAKDOWN</div><div class="summary-grid"><div><span>Model incentives</span><b id="sumMain">₹0</b></div><div><span>Step-up incentives</span><b id="sumStep">₹0</b></div><div><span>Spot incentives</span><b id="sumSpot">₹0</b></div><div class="grand"><span>TOTAL</span><b id="sumTotal">₹0</b></div></div></section>
+<section class="support card" id="contact"><div><div class="eyebrow">NEED HELP?</div><h2>Rukmani Motors HR Support</h2><p>For incentive or system-related support, contact HR.</p></div><div class="support-actions"><a href="tel:+919109591336">📞 Call HR</a><a href="https://wa.me/919109591336" target="_blank" rel="noopener">💬 WhatsApp HR</a></div></section>
+<div class="actions"><button class="clear-btn" id="resetBtn">↻ Clear all vehicles</button></div>
+</main><footer><div class="footer-brand"><img src="nexa-logo.jpg"><div><b>MARUTI SUZUKI NEXA</b><small>RUKMANI MOTORS</small></div></div><div><b>SALES INCENTIVE SYSTEM</b><small>DRIVEN BY PEOPLE. POWERED BY TRUST.</small></div><div><small>HR: 91095 91336</small></div></footer></div>
+<div class="announcement-backdrop" id="announcementBackdrop" hidden><div class="announcement-modal"><button class="modal-x" id="closeAnnouncement">×</button><img id="announcementImage" hidden><div class="announcement-kicker">RUKMANI NEXA</div><h2 id="announcementTitle"></h2><p id="announcementMessage"></p><button class="gold-btn modal-close-btn" id="closeAnnouncement2">Continue</button></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="data.js"></script><script src="app.js"></script></body></html>

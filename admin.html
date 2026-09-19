@@ -1,45 +1,6 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rukmani • Monthly Excel Update</title>
-<style>
-body{margin:0;background:#060708;color:#eee;font-family:system-ui,-apple-system,Segoe UI,sans-serif}.wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}.card{background:#0d1114;border:1px solid #272d31;border-radius:12px;padding:24px;margin-top:18px}.gold{color:#e4bd59}h1{font-family:Georgia,serif;font-weight:400;letter-spacing:3px}h2{font-size:15px;letter-spacing:2px}p,li{color:#a1a7ac;font-size:13px;line-height:1.7}input{width:100%;padding:14px;border:1px solid #394148;background:#12181d;color:#eee;border-radius:7px}button{padding:13px 17px;border:0;border-radius:7px;background:#d6ae48;color:#070707;font-weight:800;margin-top:12px;cursor:pointer}.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.download{background:#20262b;color:#eee}.status{margin-top:15px;padding:12px;background:#090d10;border:1px solid #242b30;border-radius:7px;white-space:pre-wrap;font-size:12px}.back{color:#d8b35b}
-</style>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-</head><body><div class="wrap">
-<a class="back" href="./">← Back to calculator</a><h1>RUKMANI MOTORS <span class="gold">NEXA</span></h1>
-<div class="card"><h2>MONTHLY EXCEL UPDATE</h2><p>Upload the MSIL/Rukmani incentive Excel. This page reads the Model, Variant, Incentive, Spot 1 and Spot 2 columns and generates the website's <b>data.js</b>.</p>
-<input id="file" type="file" accept=".xlsx,.xls,.csv"><div class="row"><button id="convert">Convert Excel</button><button class="download" id="download" disabled>Download data.js</button></div><div class="status" id="status">Waiting for Excel…</div></div>
-<div class="card"><h2>STEP-UP RULE</h2><p>The website applies Step-Up <b>per model</b>: 1st same-model sale ₹1,000; 2nd ₹1,200; 3rd ₹1,500; 4th ₹1,800; 5th+ ₹2,000.</p><p>After downloading <b>data.js</b>, replace the existing data.js in GitHub. The live website then uses the new month.</p></div>
-</div>
-<script>
-let output='';
-const status=document.getElementById('status');
-document.getElementById('convert').onclick=async()=>{
- const f=document.getElementById('file').files[0]; if(!f){status.textContent='Please select an Excel file first.';return}
- try{
-  const buf=await f.arrayBuffer(), wb=XLSX.read(buf,{type:'array'}), ws=wb.Sheets[wb.SheetNames[0]];
-  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
-  let header=-1, map={};
-  for(let i=0;i<Math.min(rows.length,20);i++){
-    const r=rows[i].map(v=>String(v??'').trim().toLowerCase());
-    if(r.includes('model')&&r.includes('variant')&&r.includes('incentive')){header=i;r.forEach((v,j)=>map[v]=j);break}
-  }
-  if(header<0)throw new Error('Could not find Model / Variant / Incentive columns.');
-  let model='', data=[];
-  for(const r of rows.slice(header+1)){
-    if(r[map.model]!=null&&String(r[map.model]).trim())model=String(r[map.model]).trim();
-    const variant=r[map.variant]!=null?String(r[map.variant]).trim():'';
-    if(!variant)continue;
-    const num=v=>{const n=Number(String(v??'').replace(/[^0-9.-]/g,''));return Number.isFinite(n)?n:0};
-    data.push({model,variant,main:num(r[map.incentive]),spot1:num(r[map['spot 1']]),spot2:num(r[map['spot 2']])});
-  }
-  if(!data.length)throw new Error('No variant rows were found.');
-  const month=prompt('Month label for the calculator (e.g. October 2026):','October 2026')||'Current Month';
-  output="const INCENTIVES = "+JSON.stringify(data,null,2)+";\\nconst MONTH = "+JSON.stringify(month)+";\\nconst STEP_UP_TIERS = [1000,1200,1500,1800,2000];\\n";
-  document.getElementById('download').disabled=false;
-  status.textContent=`Ready.\\nSheet: ${wb.SheetNames[0]}\\nVariants loaded: ${data.length}\\nMonth: ${month}\\n\\nClick “Download data.js”, then replace data.js in GitHub.`;
- }catch(e){status.textContent='Error: '+e.message}
-};
-document.getElementById('download').onclick=()=>{
- const blob=new Blob([output],{type:'text/javascript'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='data.js';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)
-};
-</script></body></html>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rukmani NEXA • Master Admin</title><link rel="stylesheet" href="style.css"></head><body><div class="admin-wrap"><a class="back" href="./">← Back to RM Calculator</a><div class="admin-head"><div><div class="hero-rukmani">RUKMANI MOTORS</div><div class="hero-nexa">NEXA</div></div><div class="admin-badge">MASTER ADMIN</div></div>
+<div id="loginCard" class="admin-card"><div class="eyebrow">SECURE ADMIN LOGIN</div><h1>Control the incentive system</h1><p>Only your authorised admin account can publish incentives or announcements.</p><label>Email<input id="email" type="email" autocomplete="username"></label><label>Password<input id="password" type="password" autocomplete="current-password"></label><button class="gold-btn" id="loginBtn">Login</button><div class="status" id="loginStatus"></div></div>
+<div id="panel" hidden><div class="admin-grid"><section class="admin-card"><div class="eyebrow">MONTHLY INCENTIVE</div><h2>Upload MSIL Excel</h2><p>Upload the monthly file. The system reads Model, Variant, Incentive, Spot 1 and Spot 2, previews the rows, and publishes them centrally.</p><label>Month label<input id="month" placeholder="October 2026"></label><label>Excel file<input id="excel" type="file" accept=".xlsx,.xls,.csv"></label><button class="gold-btn" id="publishBtn">Convert & Publish</button><div class="status" id="publishStatus">Waiting for Excel…</div></section>
+<section class="admin-card"><div class="eyebrow">ANNOUNCEMENT</div><h2>Publish a popup creative</h2><label>Title<input id="aTitle" placeholder="Happy Diwali 🎉"></label><label>Message<textarea id="aMessage" rows="4" placeholder="Wishing the Rukmani NEXA team..." ></textarea></label><label>Creative image URL (optional)<input id="aImage" placeholder="https://..."></label><div class="two"><label>Start<input id="aStart" type="datetime-local"></label><label>End<input id="aEnd" type="datetime-local"></label></div><label>Show frequency<select id="aFreq"><option value="once_per_announcement">Once per announcement</option><option value="once_per_day">Once per day</option><option value="every_time">Every eligible opening</option></select></label><button class="gold-btn" id="announceBtn">Publish Announcement</button><div class="status" id="announceStatus">Ready.</div></section></div>
+<section class="admin-card"><div class="admin-row"><div><div class="eyebrow">SYSTEM STATUS</div><h2>Published scheme & announcements</h2></div><button class="clear-btn" id="logoutBtn">Logout</button></div><div id="currentStatus" class="status">Loading…</div></section></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script><script src="supabase-config.js"></script><script src="admin.js"></script></body></html>
