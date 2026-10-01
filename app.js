@@ -79,7 +79,8 @@ function gvCount() { return state.sales.filter(s => s.model === 'GRAND VITARA').
 function isGVHigh(x) {
   if (x.model !== 'GRAND VITARA') return false;
   const v = String(x.variant || '').toUpperCase();
-  return /ZETA|ALPHA|DELTA\+/.test(v) && !v.includes('SIGMA');
+  /* High Variant Incentive is only for the sunroof (O) variants. */
+  return v.includes('(O)');
 }
 function isGVStrongHybrid(x) {
   if (x.model !== 'GRAND VITARA') return false;
@@ -204,7 +205,7 @@ function resetSelector() {
   model.value = ''; variant.innerHTML = '<option value="">Select variant</option>'; variant.disabled = true; $('addBtn').disabled = true; $('preview').hidden = true;
   $('exchange').value = 'No'; $('ew').value = 'No'; $('gna').value = '0'; renderModelVisual('');
 }
-function removeSale(id) { state.sales = state.sales.filter(x => x.id !== id); render(); }
+function removeSale(id) { state.sales = state.sales.filter(s => s.id !== id); render(); }
 
 function init() {
   updateSchemeUI();
