@@ -1,105 +1,33 @@
 const $=id=>document.getElementById(id), money=n=>'₹'+Number(n||0).toLocaleString('en-IN'), esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
-let INCENTIVES_LOCAL=INCENTIVES, MONTH_LOCAL=MONTH, STEP_UP_TIERS_LOCAL=STEP_UP_TIERS; const state={sales:[],announcements:[]};
-const model=$('model'),variant=$('variant');
-async function loadMaster(){
- if(!window.supabase||window.SUPABASE_URL.startsWith('YOUR_')){init();return}
- const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);
-
- // Load incentive data independently.
- try{
-  const {data:s,error:se}=await sb.from('incentive_schemes')
-   .select('id,month_label,step_up_enabled,step_up_tiers')
-   .eq('is_published',true).order('published_at',{ascending:false}).limit(1).maybeSingle();
-  if(se) throw se;
-  if(s){
-   const {data:items,error:ie}=await sb.from('incentive_items')
-    .select('model,variant,incentive,spot1,spot2,main_incentives,spot_incentives')
-    .eq('scheme_id',s.id);
-   if(ie) throw ie;
-   if(items?.length){
-    INCENTIVES_LOCAL=items.map(x=>{
-     const mains=Array.isArray(x.main_incentives)&&x.main_incentives.length
-      ? x.main_incentives.map(Number) : [Number(x.incentive||0)];
-     const spots=Array.isArray(x.spot_incentives)
-      ? x.spot_incentives.map(Number)
-      : [Number(x.spot1||0),Number(x.spot2||0)].filter(v=>v!==0);
-     return {...x,main_incentives:mains,spot_incentives:spots,main:mains.reduce((a,v)=>a+v,0),spot1:spots[0]||0,spot2:spots[1]||0,spotTotal:spots.reduce((a,v)=>a+v,0)};
-    });
-    MONTH_LOCAL=s.month_label;
-    STEP_UP_TIERS_LOCAL=s.step_up_enabled===false ? [] : (Array.isArray(s.step_up_tiers)&&s.step_up_tiers.length?s.step_up_tiers.map(Number):STEP_UP_TIERS_LOCAL);
-   }
-  }
- }catch(e){console.warn('Master incentive data unavailable; using local data.',e)}
-
- // Load announcements separately. A scheme error must not prevent popups.
- try{
-  const {data:a,error:ae}=await sb.from('announcements')
-   .select('*').eq('is_active',true).order('created_at',{ascending:false});
-  if(ae) throw ae;
-  state.announcements=a||[];
- }catch(e){
-  state.announcements=[];
-  console.warn('Announcement data unavailable.',e);
- }
-
- init();
- showAnnouncement();
-}
-function init(){ $('monthPill').textContent=MONTH_LOCAL; model.innerHTML='<option value="">Select model</option>';[...new Set(INCENTIVES_LOCAL.map(x=>x.model))].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;model.appendChild(o)});render(); }
-function countModel(m){return state.sales.filter(x=>x.model===m).length}
-function stepFor(m){if(!STEP_UP_TIERS_LOCAL.length)return 0;const n=countModel(m)+1;return STEP_UP_TIERS_LOCAL[Math.min(n-1,STEP_UP_TIERS_LOCAL.length-1)]}
-function totals(){return state.sales.reduce((a,x)=>{a.main+=x.main;a.step+=x.step;a.spot+=x.spotTotal||x.spot1+x.spot2;return a},{main:0,step:0,spot:0})}
-function renderTiers(){
- const counts={};state.sales.forEach(x=>counts[x.model]=(counts[x.model]||0)+1);
- const max=Object.values(counts).length?Math.max(...Object.values(counts)):0;
- const has=STEP_UP_TIERS_LOCAL.length>0;
- $('scheme').hidden=!has;
- $('tiers').innerHTML=has?STEP_UP_TIERS_LOCAL.map((v,i)=>`<div class="tier ${max===i+1?'active':''}"><small>${i<4?`${i+1}${i===0?'st':i===1?'nd':i===2?'rd':'th'} car`:'5th+ car'}</small><b>${money(v)}</b></div>`).join(''):'';
- $('nextMilestone').textContent=has?money(STEP_UP_TIERS_LOCAL[Math.min(max,STEP_UP_TIERS_LOCAL.length-1)]):'—';
-}
-function render(){
- const t=totals(),n=state.sales.length,total=t.main+t.step+t.spot;
- $('grandTotal').textContent=money(total);$('headTotal').textContent=money(total);$('vehicleCount').textContent=n;$('countText').textContent=`${n} ${n===1?'vehicle':'vehicles'}`;$('statusText').textContent=n?'ACTIVE':'START SELLING';
- $('sumMain').textContent=money(t.main);$('sumStep').textContent=money(t.step);$('sumSpot').textContent=money(t.spot);$('sumTotal').textContent=money(total);renderTiers();
- $('emptyTable').style.display=n?'none':'block';$('summary').hidden=!n;
- $('salesBody').innerHTML=state.sales.map((x,i)=>`<tr><td>${i+1}</td><td class="model-name">${esc(x.model)}</td><td class="variant-name">${esc(x.variant)}</td><td>${money(x.main+x.spotTotal)}</td><td class="step">${money(x.step)}</td><td>${money(x.main+x.spotTotal+x.step)}</td><td><button class="delete" data-id="${x.id}">×</button></td></tr>`).join('');
- document.querySelectorAll('.delete').forEach(b=>b.onclick=()=>removeSale(b.dataset.id));
-}
-model.onchange=()=>{variant.innerHTML='<option value="">Select variant</option>';variant.disabled=!model.value;$('addBtn').disabled=true;$('preview').hidden=true;renderModelVisual(model.value);if(model.value)INCENTIVES_LOCAL.filter(x=>x.model===model.value).forEach(x=>{const o=document.createElement('option');o.value=x.variant;o.textContent=x.variant;variant.appendChild(o)})};
-function renderIncentivePreview(x){
- if(!x){$('preview').hidden=true;return}
- const mains=x.main_incentives||[x.main||0],spots=x.spot_incentives||[];
- const parts=[];
- mains.forEach((v,i)=>parts.push(`<span>${mains.length===1?'Main Incentive':'Main '+(i+1)} <b>${money(v)}</b></span>`));
- spots.forEach((v,i)=>parts.push(`<span>Spot ${i+1} <b>${money(v)}</b></span>`));
- $('preview').innerHTML=parts.join('');
- $('preview').hidden=false;
-}
-variant.onchange=()=>{const x=INCENTIVES_LOCAL.find(x=>x.model===model.value&&x.variant===variant.value);$('addBtn').disabled=!x;renderIncentivePreview(x)};
-$('addBtn').onclick=()=>{const x=INCENTIVES_LOCAL.find(x=>x.model===model.value&&x.variant===variant.value);if(!x)return;state.sales.push({...x,step:stepFor(x.model),id:String(Date.now()+Math.random())});resetSelector();render()};
-function resetSelector(){model.value='';variant.innerHTML='<option value="">Select variant</option>';variant.disabled=true;$('addBtn').disabled=true;$('preview').hidden=true;renderModelVisual('')}
-function removeSale(id){const x=state.sales.find(x=>x.id===id);state.sales=state.sales.filter(x=>x.id!==id);if(x&&STEP_UP_TIERS_LOCAL.length){let n=0;state.sales.forEach(s=>{if(s.model===x.model){n++;s.step=STEP_UP_TIERS_LOCAL[Math.min(n-1,STEP_UP_TIERS_LOCAL.length-1)]}})}render()}
-$('resetBtn').onclick=()=>{if(!state.sales.length||confirm('Clear all vehicles for this month?')){state.sales=[];resetSelector();render()}};
-const VEHICLE_IMAGES={
-  'NEW BALENO':'vehicle-images/Baleno.png',
-  'Old BALENO':'vehicle-images/Baleno.png',
-  'Fronx':'vehicle-images/Fronx.png',
-  'GRAND VITARA':'vehicle-images/GrandVitara.png',
-  'XL6':'vehicle-images/XL6.png',
-  'INVICTO':'vehicle-images/Invicto.png',
-  'JIMNY':'vehicle-images/Jimny.png',
-  'E-VITARA':'vehicle-images/eVitara.png'
-};
-function renderModelVisual(m){
-  const el=$('modelVisual');
-  if(!m){el.innerHTML='<div class="visual-placeholder"><span>SELECT A MODEL</span><b>Vehicle preview</b></div>';return}
-  const src=VEHICLE_IMAGES[m];
-  if(src){
-    el.innerHTML=`<div class="vehicle-photo"><img src="${src}" alt="${esc(m)} vehicle"><div class="vehicle-photo-overlay"><strong>${esc(m)}</strong><small>Model selected</small></div></div>`;
-  }else{
-    el.innerHTML=`<div class="vehicle-art"><div class="vehicle-glow"></div><div class="vehicle-shape"></div><div class="vehicle-label">${esc(m)}</div><small>Model selected</small></div>`;
-  }
-}
-function showAnnouncement(){if(!state.announcements.length)return;const now=new Date();const a=state.announcements.find(x=>new Date(x.starts_at)<=now&&(!x.ends_at||new Date(x.ends_at)>=now));if(!a)return;const key='rukmani_seen_'+a.id;let show=true;if(a.display_frequency==='once_per_announcement'&&localStorage.getItem(key))show=false;if(a.display_frequency==='once_per_day'&&localStorage.getItem(key)===new Date().toISOString().slice(0,10))show=false;if(!show)return;$('announcementTitle').textContent=a.title;$('announcementMessage').textContent=a.message||'';if(a.image_url){$('announcementImage').src=a.image_url;$('announcementImage').hidden=false}else $('announcementImage').hidden=true;$('announcementBackdrop').hidden=false;const mark=()=>{if(a.display_frequency==='once_per_announcement')localStorage.setItem(key,'1');if(a.display_frequency==='once_per_day')localStorage.setItem(key,new Date().toISOString().slice(0,10));$('announcementBackdrop').hidden=true};$('closeAnnouncement').onclick=mark;$('closeAnnouncement2').onclick=mark}
-loadMaster();
-if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+let INCENTIVES_LOCAL=INCENTIVES, MONTH_LOCAL='October 2026';
+const state={sales:[],announcements:[]};
+const model=$('model'),variant=$('variant'),bookingDate=$('bookingDate');
+const OCT_SCHEME={
+ period(date){return date.getDate()<=10?{name:'PRE-NAVRATRI BONANZA',range:'1–10 October 2026',short:'PRE-NAVRATRI • 1–10 OCT'}:{name:'NAVRATRI BOOKING BONANZA',range:'11–31 October 2026',short:'NAVRATRI • 11–31 OCT'}},
+ retailBonus:{'NEW BALENO':{cng:[500,1000,1500],petrol:[500,1500,2500]},'Fronx':{cng:[1250,1500,2000],petrol:[1250,1500,2500],turbo:[1250,1500,2500]},'XL6':{all:[3000]},'JIMNY':{all:[5000]},'INVICTO':{all:[10000]},'E-VITARA':{all:[7000]}},
+ exchange:{'NEW BALENO':750,'Fronx':500,'XL6':1000,'JIMNY':1000,'INVICTO':3000,'E-VITARA':2500},ew:300,gna:[[40000,50000,1200],[50000,60000,2000],[60000,Infinity,4000]],gv:{petrol:[5000,6000],cng:[2000,3000]},evRm:12000,highVariant:4000};
+function schemeForDate(){const d=new Date(`${bookingDate.value||'2026-10-01'}T12:00:00`);return OCT_SCHEME.period(d)}
+function updateSchemeUI(){const s=schemeForDate();$('schemeBadge').innerHTML=`${s.name}<span>${s.range}</span>`;$('promoPeriod').textContent=s.short;$('monthPill').textContent='October 2026'}
+function modelType(x){const v=(x.variant||'').toUpperCase();if(x.model==='GRAND VITARA')return v.includes('CNG')?'cng':'petrol';if(x.model==='NEW BALENO')return v.includes('CNG')?'cng':'petrol';if(x.model==='Fronx')return v.includes('CNG')?'cng':(v.includes('TURBO')?'turbo':'petrol');return'all'}
+function octoberBonus(x){const rule=OCT_SCHEME.retailBonus[x.model];if(!rule)return Number(x.main||0);const n=state.sales.filter(s=>s.model===x.model).length+1;const arr=rule[modelType(x)]||rule.all||[0];return arr[Math.min(n-1,arr.length-1)]||0}
+function exchangeBonus(x){return OCT_SCHEME.exchange[x.model]||0}
+function gnaBonus(value){const n=Number(value||0),r=OCT_SCHEME.gna.find(a=>n>=a[0]&&n<a[1]);return r?r[2]:0}
+function gvBonus(x){if(x.model!=='GRAND VITARA')return 0;const n=state.sales.filter(s=>s.model==='GRAND VITARA').length+1,arr=OCT_SCHEME.gv[modelType(x)]||OCT_SCHEME.gv.petrol;return arr[Math.min(n-1,1)]}
+function totals(){return state.sales.reduce((a,x)=>{a.main+=x.base||0;a.step+=x.step||0;a.allied+=(x.exchangeIncentive||0)+(x.ewIncentive||0)+(x.gnaIncentive||0);return a},{main:0,step:0,allied:0})}
+function renderTiers(){const counts={};state.sales.forEach(x=>counts[x.model]=(counts[x.model]||0)+1);const entries=Object.entries(counts);$('scheme').hidden=false;$('tiers').innerHTML=entries.length?entries.map(([m,n])=>`<div class="tier active"><small>${esc(m)} • ${n} car${n>1?'s':''}</small><b>${money(state.sales.filter(x=>x.model===m).reduce((a,x)=>a+x.step,0))}</b></div>`).join(''):['NEW BALENO','Fronx','GRAND VITARA','XL6','JIMNY'].map(m=>`<div class="tier"><small>${m}</small><b>Potential</b></div>`).join('');$('nextMilestone').textContent=entries.length?money(Math.max(...state.sales.map(x=>x.step))):'—'}
+function qualificationState(){const m=$('mspin').value.trim(),el=$('qualStatus');if(!m){el.className='qual-status';el.innerHTML='<span>●</span><div><b>Enter MSPIN</b><small>The monthly Target vs Achievement file will be matched using MSPIN.</small></div>';return}el.className='qual-status';el.innerHTML='<span>●</span><div><b>MSPIN captured</b><small>Eligibility will be validated from the monthly Target vs Achievement data.</small></div>'}
+function render(){const t=totals(),n=state.sales.length,total=t.main+t.step+t.allied;$('grandTotal').textContent=money(total);$('headTotal').textContent=money(total);$('vehicleCount').textContent=n;$('countText').textContent=`${n} ${n===1?'vehicle':'vehicles'}`;$('statusText').textContent=n?'ACTIVE':'START SELLING';$('sumMain').textContent=money(t.main);$('sumStep').textContent=money(t.step);$('sumAllied').textContent=money(t.allied);$('sumTotal').textContent=money(total);$('emptyTable').style.display=n?'none':'block';$('summary').hidden=!n;renderTiers();$('salesBody').innerHTML=state.sales.map((x,i)=>`<tr><td>${i+1}</td><td class="model-name">${esc(x.model)}</td><td class="variant-name">${esc(x.variant)}</td><td>${x.exchange?'Yes':'No'}</td><td>${x.ew?'Yes':'No'}</td><td>${x.gnaLabel}</td><td>${money((x.base||0)+(x.exchangeIncentive||0)+(x.ewIncentive||0)+(x.gnaIncentive||0))}</td><td class="step">${money(x.step)}</td><td>${money((x.base||0)+(x.step||0)+(x.exchangeIncentive||0)+(x.ewIncentive||0)+(x.gnaIncentive||0))}</td><td><button class="delete" data-id="${x.id}">×</button></td></tr>`).join('');document.querySelectorAll('.delete').forEach(b=>b.onclick=()=>removeSale(b.dataset.id))}
+function renderPreview(x){if(!x){$('preview').hidden=true;return}const g=gnaBonus($('gna').value),ex=$('exchange').value==='Yes'?exchangeBonus(x):0,ew=$('ew').value==='Yes'?OCT_SCHEME.ew:0,base=octoberBonus(x)+gvBonus(x);$('preview').innerHTML=`<span>Model / Bonus <b>${money(base)}</b></span><span>Exchange <b>${money(ex)}</b></span><span>EW <b>${money(ew)}</b></span><span>GNA <b>${money(g)}</b></span>`;$('preview').hidden=false}
+function renderModelVisual(m){const el=$('modelVisual');if(!m){el.innerHTML='<div class="visual-placeholder"><span>SELECT A MODEL</span><b>Vehicle preview</b></div>';return}const src=({'NEW BALENO':'vehicle-images/Baleno.png','Old BALENO':'vehicle-images/Baleno.png','Fronx':'vehicle-images/Fronx.png','GRAND VITARA':'vehicle-images/GrandVitara.png','XL6':'vehicle-images/XL6.png','INVICTO':'vehicle-images/Invicto.png','JIMNY':'vehicle-images/Jimny.png','E-VITARA':'vehicle-images/eVitara.png'})[m];el.innerHTML=src?`<div class="vehicle-photo"><img src="${src}" alt="${esc(m)} vehicle"><div class="vehicle-photo-overlay"><strong>${esc(m)}</strong><small>Model selected</small></div></div>`:`<div class="vehicle-art"><div class="vehicle-shape"></div><div class="vehicle-label">${esc(m)}</div><small>Model selected</small></div>`}
+function resetSelector(){model.value='';variant.innerHTML='<option value="">Select variant</option>';variant.disabled=true;$('addBtn').disabled=true;$('preview').hidden=true;$('exchange').value='No';$('ew').value='No';$('gna').value='0';renderModelVisual('')}
+function removeSale(id){state.sales=state.sales.filter(x=>x.id!==id);const counters={};state.sales.forEach(x=>{counters[x.model]=(counters[x.model]||0)+1;const n=counters[x.model],rule=OCT_SCHEME.retailBonus[x.model],arr=rule?(rule[modelType(x)]||rule.all||[0]):[Number(x.main||0)];x.base=arr[Math.min(n-1,arr.length-1)]||0;x.step=x.base+(x.model==='GRAND VITARA'?(OCT_SCHEME.gv[modelType(x)]||OCT_SCHEME.gv.petrol)[Math.min(n-1,1)]:0)});render()}
+async function loadMaster(){if(!window.supabase||!window.SUPABASE_URL||window.SUPABASE_URL.startsWith('YOUR_')){init();showAnnouncement();return}const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_PUBLISHABLE_KEY);try{const {data:s,error:se}=await sb.from('incentive_schemes').select('id,month_label,step_up_enabled,step_up_tiers').eq('is_published',true).order('published_at',{ascending:false}).limit(1).maybeSingle();if(se)throw se;if(s){const {data:items,error:ie}=await sb.from('incentive_items').select('model,variant,incentive,spot1,spot2,main_incentives,spot_incentives').eq('scheme_id',s.id);if(ie)throw ie;if(items?.length)INCENTIVES_LOCAL=items.map(x=>({...x,main:Number(x.incentive||0),spot1:Number(x.spot1||0),spot2:Number(x.spot2||0)}));MONTH_LOCAL=s.month_label||MONTH_LOCAL}}catch(e){console.warn('Master incentive data unavailable; October local calculator rules remain active.',e)}try{const {data:a,error:ae}=await sb.from('announcements').select('*').eq('is_active',true).order('created_at',{ascending:false});if(ae)throw ae;state.announcements=a||[]}catch(e){state.announcements=[];console.warn('Announcement data unavailable.',e)}init();showAnnouncement()}
+function init(){updateSchemeUI();model.innerHTML='<option value="">Select model</option>';[...new Set(INCENTIVES_LOCAL.map(x=>x.model))].forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;model.appendChild(o)});qualificationState();render()}
+model.onchange=()=>{variant.innerHTML='<option value="">Select variant</option>';variant.disabled=!model.value;$('addBtn').disabled=true;if(model.value)INCENTIVES_LOCAL.filter(x=>x.model===model.value).forEach(x=>{const o=document.createElement('option');o.value=x.variant;o.textContent=x.variant;variant.appendChild(o)});renderModelVisual(model.value);renderPreview(INCENTIVES_LOCAL.find(x=>x.model===model.value&&x.variant===variant.value))};
+variant.onchange=()=>{const x=INCENTIVES_LOCAL.find(x=>x.model===model.value&&x.variant===variant.value);$('addBtn').disabled=!x;renderPreview(x)};
+['exchange','ew','gna'].forEach(id=>$(id).onchange=()=>renderPreview(INCENTIVES_LOCAL.find(x=>x.model===model.value&&x.variant===variant.value)));
+bookingDate.onchange=updateSchemeUI;$('mspin').oninput=qualificationState;
+$('addBtn').onclick=()=>{const x=INCENTIVES_LOCAL.find(x=>x.model===model.value&&x.variant===variant.value);if(!x)return;const ex=$('exchange').value==='Yes',ew=$('ew').value==='Yes',gnaValue=Number($('gna').value||0),g=gnaBonus(gnaValue),e=ex?exchangeBonus(x):0,w=ew?OCT_SCHEME.ew:0,base=octoberBonus(x),gv=gvBonus(x);state.sales.push({...x,base,step:base+gv,exchange:ex,ew,gnaLabel:gnaValue?money(gnaValue):'₹0',exchangeIncentive:e,ewIncentive:w,gnaIncentive:g,id:String(Date.now()+Math.random())});resetSelector();render()};
+$('resetBtn').onclick=()=>{if(!state.sales.length||confirm('Clear all vehicles for this opportunity?')){state.sales=[];resetSelector();render()}};
+function showAnnouncement(){if(!state.announcements.length)return;const now=new Date(),a=state.announcements.find(x=>new Date(x.starts_at)<=now&&(!x.ends_at||new Date(x.ends_at)>=now));if(!a)return;const key='rukmani_seen_'+a.id;let show=true;if(a.display_frequency==='once_per_announcement'&&localStorage.getItem(key))show=false;if(a.display_frequency==='once_per_day'&&localStorage.getItem(key)===new Date().toISOString().slice(0,10))show=false;if(!show)return;$('announcementTitle').textContent=a.title;$('announcementMessage').textContent=a.message||'';if(a.image_url){$('announcementImage').src=a.image_url;$('announcementImage').hidden=false}else $('announcementImage').hidden=true;$('announcementBackdrop').hidden=false;const mark=()=>{if(a.display_frequency==='once_per_announcement')localStorage.setItem(key,'1');if(a.display_frequency==='once_per_day')localStorage.setItem(key,new Date().toISOString().slice(0,10));$('announcementBackdrop').hidden=true};$('closeAnnouncement').onclick=mark;$('closeAnnouncement2').onclick=mark}
+loadMaster();if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
