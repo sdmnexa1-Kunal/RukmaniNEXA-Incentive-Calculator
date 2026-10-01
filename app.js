@@ -48,7 +48,17 @@ function groupKey(x){
   return x.model;
 }
 function groupCount(x){ return state.sales.filter(s=>groupKey(s)===groupKey(x)).length; }
+function groupPosition(x){
+  const idx=state.sales.findIndex(s=>s.id===x.id);
+  if(idx<0) return groupCount(x);
+  return state.sales.slice(0,idx).filter(s=>groupKey(s)===groupKey(x)).length;
+}
 function gvCount(){ return state.sales.filter(s=>s.model==='GRAND VITARA').length; }
+function gvPosition(x){
+  const idx=state.sales.findIndex(s=>s.id===x.id);
+  if(idx<0) return gvCount();
+  return state.sales.slice(0,idx).filter(s=>s.model==='GRAND VITARA').length;
+}
 function isGVHigh(x){
   if(x.model!=='GRAND VITARA') return false;
   const v=(x.variant||'').toUpperCase();
@@ -62,14 +72,14 @@ function modelIncentive(x){
   const rule=OCT_SCHEME.models[x.model];
   if(!rule) return Number(x.main||0);
   const arr=rule[fuelType(x)]||rule.all||[0];
-  const n=groupCount(x)+1;
-  return arr[Math.min(n-1,arr.length-1)]||0;
+  const position=groupPosition(x);
+  return arr[Math.min(position,arr.length-1)]||0;
 }
 function gvStep(x){
   if(x.model!=='GRAND VITARA') return 0;
   const arr=OCT_SCHEME.gvStep[fuelType(x)]||OCT_SCHEME.gvStep.petrol;
-  const priorGV=gvCount();
-  return arr[priorGV===0?0:1]||0;
+  const position=gvPosition(x);
+  return arr[position===0?0:1]||0;
 }
 function gvAdditional(x){
   if(x.model!=='GRAND VITARA') return 0;
@@ -99,13 +109,17 @@ function grossTotals(){
   return {modelTotal,stepTotal,gvAdditional,allied,booking,gross:modelTotal+stepTotal+gvAdditional+allied+booking,locked:false};
 }
 function renderTiers(){
-  const groups={};
-  state.sales.forEach(x=>groups[groupKey(x)]=(groups[groupKey(x)]||0)+1);
   $('scheme').hidden=false;
-  $('tiers').innerHTML=Object.entries(groups).map(([k,n])=>{
-    const sum=state.sales.filter(x=>groupKey(x)===k).reduce((a,x)=>a+vehicleCalc(x).step,0);
-    return `<div class="tier active"><small>${esc(k.replace('NEW BALENO-','Baleno ').replace('Fronx-','Fronx '))} • ${n} car${n>1?'s':''}</small><b>${money(sum)}</b></div>`;
-  }).join('')||`<div class="tier"><small>Booking period</small><b>${esc(selectedPeriod().short)}</b></div>`;
+  if(state.sales.length<OCT_SCHEME.minCars){
+    $('tiers').innerHTML=`<div class="tier"><small>Qualification lock</small><b>${OCT_SCHEME.minCars-state.sales.length} more vehicle${OCT_SCHEME.minCars-state.sales.length===1?'':'s'}</b></div>`;
+  } else {
+    const groups={};
+    state.sales.forEach(x=>groups[groupKey(x)]=(groups[groupKey(x)]||0)+1);
+    $('tiers').innerHTML=Object.entries(groups).map(([k,n])=>{
+      const sum=state.sales.filter(x=>groupKey(x)===k).reduce((a,x)=>a+vehicleCalc(x).step,0);
+      return `<div class="tier active"><small>${esc(k.replace('NEW BALENO-','Baleno ').replace('Fronx-','Fronx '))} • ${n} car${n>1?'s':''}</small><b>${money(sum)}</b></div>`;
+    }).join('');
+  }
   if(state.sales.length<OCT_SCHEME.minCars){
     const left=OCT_SCHEME.minCars-state.sales.length;
     $('nextMilestone').textContent=`${left} car${left===1?'':'s'} to unlock`;
@@ -136,7 +150,7 @@ function render(){
     dl.textContent=`Calculation locked until ${OCT_SCHEME.minCars} vehicles are added. ${OCT_SCHEME.minCars-state.sales.length} more required.`;
   } else if(deduction){
     dl.hidden=false;
-    dl.innerHTML=`<b>25% deduction applied:</b> minimum 4 vehicles achieved, but ZERO Grand Vitara retail is present. Final potential = 75% of gross potential.`;
+    dl.innerHTML=`<b>25% deduction:</b> minimum 4 vehicles achieved, but ZERO Grand Vitara retail is present. Final potential is 75% of gross potential.`;
   } else {
     dl.hidden=false;
     dl.textContent='Minimum 4 vehicles achieved and at least 1 Grand Vitara added — no 25% deduction.';
@@ -151,9 +165,14 @@ function render(){
 }
 function renderPreview(x){
   if(!x){$('preview').hidden=true;return;}
-  const temp={...x,exchange:$('exchange').value==='Yes',ew:$('ew').value==='Yes',gnaValue:Number($('gna').value||0)};
-  const c=vehicleCalc(temp),g=gnaBonus($('gna').value),ex=temp.exchange?exchangeBonus(x):0,ew=temp.ew?OCT_SCHEME.ew:0;
-  $('preview').innerHTML=`<span>Model <b>${money(c.base)}</b></span><span>GV Additional <b>${money(c.gvAdd)}</b></span><span>Step-Up <b>${money(c.step)}</b></span><span>Exchange <b>${money(ex)}</b></span><span>EW <b>${money(ew)}</b></span><span>GNA <b>${money(g)}</b></span>`;
+  const temp={...x,exchange:$('exchange').value==='Yes',ew:$('ew').value==='Yes',gnaValue:Number($('gna').value||0),id:'__preview__'};
+  const g=gnaBonus($('gna').value),ex=temp.exchange?exchangeBonus(x):0,ew=temp.ew?OCT_SCHEME.ew:0;
+  if(state.sales.length<OCT_SCHEME.minCars){
+    $('preview').innerHTML=`<span>Qualification <b>${OCT_SCHEME.minCars-state.sales.length} more vehicle${OCT_SCHEME.minCars-state.sales.length===1?'':'s'} required</b></span><span>Incentive calculation <b>LOCKED</b></span>`;
+  } else {
+    const c=vehicleCalc(temp);
+    $('preview').innerHTML=`<span>Model <b>${money(c.base)}</b></span><span>GV Additional <b>${money(c.gvAdd)}</b></span><span>Step-Up <b>${money(c.step)}</b></span><span>Exchange <b>${money(ex)}</b></span><span>EW <b>${money(ew)}</b></span><span>GNA <b>${money(g)}</b></span>`;
+  }
   $('preview').hidden=false;
 }
 function renderModelVisual(m){
