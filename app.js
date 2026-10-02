@@ -97,13 +97,17 @@ function modelIncentive(x) {
 }
 function gvStep(x) {
   if (x.model !== 'GRAND VITARA') return 0;
+  /* Step-Up is based on the vehicle's fuel type and the GV count:
+     Petrol: 1st GV ₹5,000; 2nd onward ₹6,000 each.
+     CNG: 1st GV ₹2,000; 2nd onward ₹3,000 each. */
   const arr = OCT_SCHEME.gvStep[fuelType(x)] || OCT_SCHEME.gvStep.petrol;
   return arr[gvPosition(x) === 0 ? 0 : 1] || 0;
 }
 function gvAdditional(x) {
   if (x.model !== 'GRAND VITARA') return 0;
-  /* GV additional incentives are additive:
-     Strong Hybrid +₹5,000 and High/Sunroof (O) +₹4,000 can both apply. */
+  /* Additional GV incentives stack independently:
+     (O) Sunroof +₹4,000 and (+) Strong Hybrid +₹5,000.
+     Therefore (+)(O) receives both = +₹9,000. */
   const strongHybrid = isGVStrongHybrid(x) ? OCT_SCHEME.gvStrongHybrid : 0;
   const highVariant = isGVHigh(x) ? OCT_SCHEME.gvHigh : 0;
   return strongHybrid + highVariant;
