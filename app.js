@@ -171,6 +171,10 @@ function render() {
   $('sumAllied').textContent = money(t.allied);
   $('sumBooking').textContent = money(t.booking);
   $('sumTotal').textContent = money(finalTotal);
+  const bookingTop = $('sumBookingTop');
+  if (bookingTop) bookingTop.textContent = money(t.booking);
+  const bookingPeriodText = $('bookingPeriodText');
+  if (bookingPeriodText) bookingPeriodText.textContent = selectedPeriod().short;
   $('emptyTable').style.display = state.sales.length ? 'none' : 'block';
   $('summary').hidden = !state.sales.length;
 
