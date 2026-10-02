@@ -160,7 +160,8 @@ function renderTiers() {
 
 function render() {
   const q = qualification(), t = grossTotals();
-  const finalTotal = q.eligible ? Math.round(t.gross * (q.deduction ? 0.75 : 1)) : 0;
+  const deductionAmount = q.deduction ? Math.round(t.gross * OCT_SCHEME.zeroGVReduction) : 0;
+  const finalTotal = q.eligible ? t.gross - deductionAmount : 0;
   $('grandTotal').textContent = money(finalTotal);
   $('headTotal').textContent = money(finalTotal);
   $('vehicleCount').textContent = state.sales.length;
@@ -180,7 +181,19 @@ function render() {
 
   const dl = $('deductionLine');
   if (!state.sales.length) dl.hidden = true;
-  else { dl.hidden = false; dl.textContent = q.message; }
+  else {
+    dl.hidden = false;
+    dl.textContent = q.deduction
+      ? `GROSS POTENTIAL ${money(t.gross)} → ZERO GV DEDUCTION (25%) -${money(deductionAmount)} → FINAL POTENTIAL ${money(finalTotal)}`
+      : q.message;
+  }
+  const deductionSummary = $('deductionSummary');
+  if (deductionSummary) {
+    deductionSummary.hidden = !q.deduction || !state.sales.length;
+    deductionSummary.textContent = q.deduction
+      ? `NO GRAND VITARA: 25% deduction applied after total = -${money(deductionAmount)}`
+      : '';
+  }
 
   renderTiers();
   $('salesBody').innerHTML = state.sales.map((x, i) => {
