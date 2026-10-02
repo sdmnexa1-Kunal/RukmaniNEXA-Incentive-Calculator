@@ -12,6 +12,9 @@ const OCT_SCHEME = {
   minCars: 4,
   zeroGVReduction: 0.25,
   ew: 300,
+  bookingSpot: 600,
+  financeSpot: 1200,
+  bookingSpotModels: ['NEW BALENO', 'Fronx', 'GRAND VITARA', 'XL6'],
   gna: [
     { min: 40000, max: 50000, label: '₹40,000–₹50,000', incentive: 1200 },
     { min: 50000, max: 60000, label: '₹50,000–₹60,000', incentive: 2000 },
@@ -125,12 +128,29 @@ function bookingBonus(count) {
   if (count >= 5) return count * values[4];
   return values[count - 1] || 0;
 }
+function bookingSpotEligible(x) {
+  return OCT_SCHEME.bookingSpotModels.includes(x.model) && fuelType(x) === 'petrol';
+}
+function financeSpotBonus(x) {
+  return x.finance === 'Mahindra Finance' || x.finance === 'Chola Finance' ? OCT_SCHEME.financeSpot : 0;
+}
+function bookingSpotBonus(x) {
+  return x.bookingSpot && bookingSpotEligible(x) ? OCT_SCHEME.bookingSpot : 0;
+}
+function spotDescription(x) {
+  const parts = [];
+  if (bookingSpotBonus(x)) parts.push('Booking Spot ₹600');
+  if (financeSpotBonus(x)) parts.push(`${x.finance} ₹1,200`);
+  return parts.join(' + ') || '—';
+}
 function vehicleCalc(x) {
   const base = modelIncentive(x), step = gvStep(x), gvAdd = gvAdditional(x);
   const exchange = x.exchange ? exchangeBonus(x) : 0;
   const ew = x.ew ? OCT_SCHEME.ew : 0;
   const gna = gnaInfo(x.gnaValue)?.incentive || 0;
-  return { base, step, gvAdd, exchange, ew, gna, total: base + step + gvAdd + exchange + ew + gna };
+  const bookingSpot = bookingSpotBonus(x);
+  const financeSpot = financeSpotBonus(x);
+  return { base, step, gvAdd, exchange, ew, gna, bookingSpot, financeSpot, total: base + step + gvAdd + exchange + ew + gna + bookingSpot + financeSpot };
 }
 
 function qualification() {
@@ -143,11 +163,19 @@ function qualification() {
 
 function grossTotals() {
   const q = qualification();
-  if (q.locked) return { modelTotal: 0, stepTotal: 0, gvAdditional: 0, allied: 0, booking: 0, gross: 0, locked: true };
-  let modelTotal = 0, stepTotal = 0, gvAdditional = 0, allied = 0;
-  state.sales.forEach(x => { const c = vehicleCalc(x); modelTotal += c.base; stepTotal += c.step; gvAdditional += c.gvAdd; allied += c.exchange + c.ew + c.gna; });
+  if (q.locked) return { modelTotal: 0, stepTotal: 0, gvAdditional: 0, allied: 0, bookingSpotTotal: 0, financeSpotTotal: 0, booking: 0, gross: 0, locked: true };
+  let modelTotal = 0, stepTotal = 0, gvAdditional = 0, allied = 0, bookingSpotTotal = 0, financeSpotTotal = 0;
+  state.sales.forEach(x => {
+    const c = vehicleCalc(x);
+    modelTotal += c.base;
+    stepTotal += c.step;
+    gvAdditional += c.gvAdd;
+    allied += c.exchange + c.ew + c.gna;
+    bookingSpotTotal += c.bookingSpot;
+    financeSpotTotal += c.financeSpot;
+  });
   const booking = bookingBonus(state.sales.length);
-  return { modelTotal, stepTotal, gvAdditional, allied, booking, gross: modelTotal + stepTotal + gvAdditional + allied + booking, locked: false };
+  return { modelTotal, stepTotal, gvAdditional, allied, bookingSpotTotal, financeSpotTotal, booking, gross: modelTotal + stepTotal + gvAdditional + allied + bookingSpotTotal + financeSpotTotal + booking, locked: false };
 }
 
 function renderTiers() {
@@ -179,6 +207,8 @@ function render() {
   $('sumMain').textContent = money(t.modelTotal + t.gvAdditional);
   $('sumStep').textContent = money(t.stepTotal);
   $('sumAllied').textContent = money(t.allied);
+  $('sumBookingSpot').textContent = money(t.bookingSpotTotal);
+  $('sumFinanceSpot').textContent = money(t.financeSpotTotal);
   $('sumBooking').textContent = money(t.booking);
   $('sumTotal').textContent = money(finalTotal);
   const bookingTop = $('sumBookingTop');
@@ -207,17 +237,17 @@ function render() {
   renderTiers();
   $('salesBody').innerHTML = state.sales.map((x, i) => {
     const c = vehicleCalc(x), locked = q.locked, gna = gnaInfo(x.gnaValue);
-    return `<tr><td>${i + 1}</td><td class="model-name">${esc(x.model)}</td><td class="variant-name">${esc(x.variant)}</td><td>${x.exchange ? 'Yes' : 'No'}</td><td>${x.ew ? 'Yes' : 'No'}</td><td>${gna ? esc(gna.label) : '₹0'}</td><td>${locked ? '—' : money(c.base + c.gvAdd + c.exchange + c.ew + c.gna)}</td><td class="step">${locked ? '—' : money(c.step)}</td><td>${locked ? 'Locked' : money(c.total)}</td><td><button class="delete" data-id="${x.id}">×</button></td></tr>`;
+    return `<tr><td>${i + 1}</td><td class="model-name">${esc(x.model)}</td><td class="variant-name">${esc(x.variant)}</td><td>${x.exchange ? 'Yes' : 'No'}</td><td>${x.ew ? 'Yes' : 'No'}</td><td>${gna ? esc(gna.label) : '₹0'}</td><td class="spot-cell">${locked ? '—' : esc(spotDescription(x))}</td><td>${locked ? '—' : money(c.base + c.gvAdd + c.exchange + c.ew + c.gna + c.bookingSpot + c.financeSpot)}</td><td class="step">${locked ? '—' : money(c.step)}</td><td>${locked ? 'Locked' : money(c.total)}</td><td><button class="delete" data-id="${x.id}">×</button></td></tr>`;
   }).join('');
   document.querySelectorAll('.delete').forEach(btn => btn.onclick = () => removeSale(btn.dataset.id));
 }
 
 function renderPreview(x) {
   if (!x) { $('preview').hidden = true; return; }
-  const temp = { ...x, exchange: $('exchange').value === 'Yes', ew: $('ew').value === 'Yes', gnaValue: Number($('gna').value || 0), id: '__preview__' };
+  const temp = { ...x, exchange: $('exchange').value === 'Yes', ew: $('ew').value === 'Yes', gnaValue: Number($('gna').value || 0), bookingSpot: $('bookingSpot').value === 'Yes', finance: $('financeSpot').value, id: '__preview__' };
   const q = qualification(), c = vehicleCalc(temp), gna = gnaInfo(temp.gnaValue);
   if (q.locked) $('preview').innerHTML = `<span>Qualification <b>${OCT_SCHEME.minCars - state.sales.length} more vehicle${OCT_SCHEME.minCars - state.sales.length === 1 ? '' : 's'} required</b></span><span>Incentive calculation <b>LOCKED</b></span>`;
-  else $('preview').innerHTML = `<span>Model <b>${money(c.base)}</b></span><span>GV Additional <b>${money(c.gvAdd)}</b></span><span>Step-Up <b>${money(c.step)}</b></span><span>Exchange <b>${money(c.exchange)}</b></span><span>EW <b>${money(c.ew)}</b></span><span>GNA <b>${money(gna?.incentive || 0)}</b></span>`;
+  else $('preview').innerHTML = `<span>Model <b>${money(c.base)}</b></span><span>GV Additional <b>${money(c.gvAdd)}</b></span><span>Step-Up <b>${money(c.step)}</b></span><span>Exchange <b>${money(c.exchange)}</b></span><span>EW <b>${money(c.ew)}</b></span><span>GNA <b>${money(gna?.incentive || 0)}</b></span><span>Booking Spot <b>${money(c.bookingSpot)}</b></span><span>Finance Spot <b>${money(c.financeSpot)}</b></span>`;
   $('preview').hidden = false;
 }
 
@@ -229,7 +259,7 @@ function renderModelVisual(m) {
 }
 function resetSelector() {
   model.value = ''; variant.innerHTML = '<option value="">Select variant</option>'; variant.disabled = true; $('addBtn').disabled = true; $('preview').hidden = true;
-  $('exchange').value = 'No'; $('ew').value = 'No'; $('gna').value = '0'; renderModelVisual('');
+  $('exchange').value = 'No'; $('ew').value = 'No'; $('gna').value = '0'; $('bookingSpot').value = 'No'; $('financeSpot').value = 'No'; renderModelVisual('');
 }
 function removeSale(id) { state.sales = state.sales.filter(s => s.id !== id); render(); }
 
@@ -248,6 +278,12 @@ model.onchange = () => {
   variant.innerHTML = '<option value="">Select variant</option>'; variant.disabled = !model.value; $('addBtn').disabled = true;
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   if (model.value) source.filter(x => x.model === model.value).forEach(x => { const option = document.createElement('option'); option.value = x.variant; option.textContent = x.variant; variant.appendChild(option); });
+  const sourceVariant = source.find(item => item.model === model.value);
+  const petrolEligible = sourceVariant ? fuelType(sourceVariant) === 'petrol' : false;
+  const spotEligible = ['NEW BALENO','Fronx','GRAND VITARA','XL6'].includes(model.value) && petrolEligible;
+  $('bookingSpot').disabled = !spotEligible;
+  $('bookingSpotHint').textContent = spotEligible ? '₹600 • eligible petrol booking' : '₹600 • Baleno / GV / XL6 / Fronx petrol only';
+  if (!spotEligible) $('bookingSpot').value = 'No';
   renderModelVisual(model.value); renderPreview(null);
 };
 variant.onchange = () => {
@@ -255,7 +291,7 @@ variant.onchange = () => {
   const x = source.find(item => item.model === model.value && item.variant === variant.value);
   $('addBtn').disabled = !x; renderPreview(x);
 };
-['exchange', 'ew', 'gna'].forEach(id => $(id).onchange = () => {
+['exchange', 'ew', 'gna', 'bookingSpot', 'financeSpot'].forEach(id => $(id).onchange = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   const x = source.find(item => item.model === model.value && item.variant === variant.value); renderPreview(x);
 });
@@ -265,7 +301,7 @@ bookingDate.addEventListener('input', applyBookingDate);
 $('addBtn').onclick = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   const x = source.find(item => item.model === model.value && item.variant === variant.value); if (!x) return;
-  state.sales.push({ model: x.model, variant: x.variant, exchange: $('exchange').value === 'Yes', ew: $('ew').value === 'Yes', gnaValue: Number($('gna').value || 0), id: String(Date.now() + Math.random()) });
+  state.sales.push({ model: x.model, variant: x.variant, exchange: $('exchange').value === 'Yes', ew: $('ew').value === 'Yes', gnaValue: Number($('gna').value || 0), bookingSpot: $('bookingSpot').value === 'Yes', finance: $('financeSpot').value, id: String(Date.now() + Math.random()) });
   resetSelector(); render();
 };
 $('resetBtn').onclick = () => { if (!state.sales.length || confirm('Clear all vehicles from this opportunity?')) { state.sales = []; resetSelector(); render(); } };
