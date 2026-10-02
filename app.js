@@ -233,7 +233,7 @@ variant.onchange = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   const x = source.find(item => item.model === model.value && item.variant === variant.value); renderPreview(x);
 });
-bookingDate.onchange = () => { updateSchemeUI(); render(); };
+function applyBookingDate(){ if(!bookingDate.value) return; updateSchemeUI(); render(); }\nbookingDate.addEventListener('change', applyBookingDate);\nbookingDate.addEventListener('input', applyBookingDate);
 $('addBtn').onclick = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   const x = source.find(item => item.model === model.value && item.variant === variant.value); if (!x) return;
