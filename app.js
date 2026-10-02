@@ -165,7 +165,6 @@ function qualification() {
 
 function grossTotals() {
   const q = qualification();
-  if (q.locked) return { modelTotal: 0, stepTotal: 0, gvAdditional: 0, allied: 0, bookingSpotTotal: 0, financeSpotTotal: 0, booking: 0, gross: 0, locked: true };
   let modelTotal = 0, stepTotal = 0, gvAdditional = 0, allied = 0, bookingSpotTotal = 0, financeSpotTotal = 0;
   state.sales.forEach(x => {
     const c = vehicleCalc(x);
@@ -176,8 +175,11 @@ function grossTotals() {
     bookingSpotTotal += c.bookingSpot;
     financeSpotTotal += c.financeSpot;
   });
+  const spotTotal = bookingSpotTotal + financeSpotTotal;
+  if (q.locked) return { modelTotal: 0, stepTotal: 0, gvAdditional: 0, allied: 0, bookingSpotTotal, financeSpotTotal, booking: 0, qualifyingGross: 0, gross: spotTotal, locked: true };
   const booking = bookingBonus(state.sales.length);
-  return { modelTotal, stepTotal, gvAdditional, allied, bookingSpotTotal, financeSpotTotal, booking, gross: modelTotal + stepTotal + gvAdditional + allied + bookingSpotTotal + financeSpotTotal + booking, locked: false };
+  const qualifyingGross = modelTotal + stepTotal + gvAdditional + allied + booking;
+  return { modelTotal, stepTotal, gvAdditional, allied, bookingSpotTotal, financeSpotTotal, booking, qualifyingGross, gross: qualifyingGross + spotTotal, locked: false };
 }
 
 function renderTiers() {
@@ -199,8 +201,9 @@ function renderTiers() {
 
 function render() {
   const q = qualification(), t = grossTotals();
-  const deductionAmount = q.deduction ? t.gross * OCT_SCHEME.zeroGVReduction : 0;
-  const finalTotal = q.eligible ? Math.round(t.gross - deductionAmount) : 0;
+  const deductionAmount = q.deduction ? t.qualifyingGross * OCT_SCHEME.zeroGVReduction : 0;
+  const qualifiedFinal = q.eligible ? Math.round(t.qualifyingGross - deductionAmount) : 0;
+  const finalTotal = qualifiedFinal + t.bookingSpotTotal + t.financeSpotTotal;
   $('grandTotal').textContent = money(finalTotal);
   $('headTotal').textContent = money(finalTotal);
   $('vehicleCount').textContent = state.sales.length;
@@ -225,8 +228,8 @@ function render() {
   else {
     dl.hidden = false;
     dl.textContent = q.deduction
-      ? `GROSS POTENTIAL ${money(t.gross)} → ZERO GV DEDUCTION (25%) -${money(deductionAmount)} → FINAL POTENTIAL ${money(finalTotal)}`
-      : q.message;
+      ? `QUALIFYING INCENTIVES ${money(t.qualifyingGross)} → ZERO GV DEDUCTION (25%) -${money(deductionAmount)} → PLUS SPOT INCENTIVES ${money(t.bookingSpotTotal + t.financeSpotTotal)} → FINAL POTENTIAL ${money(finalTotal)}`
+      : (state.sales.length < OCT_SCHEME.minCars ? `QUALIFICATION LOCKED: ${money(t.bookingSpotTotal + t.financeSpotTotal)} SPOT INCENTIVES SHOWN SEPARATELY (NOT SUBJECT TO 4-CAR QUALIFICATION)` : q.message);
   }
   const deductionSummary = $('deductionSummary');
   if (deductionSummary) {
