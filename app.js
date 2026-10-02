@@ -85,7 +85,7 @@ function isGVHigh(x) {
 function isGVStrongHybrid(x) {
   if (x.model !== 'GRAND VITARA') return false;
   const v = String(x.variant || '').toUpperCase();
-  return v.includes('STRONG HYBRID') || v.includes('ZETA+') || v.includes('ALPHA+');
+  return v.includes('STRONG HYBRID') || v.includes('DELTA+') || v.includes('ZETA+') || v.includes('ALPHA+');
 }
 function modelIncentive(x) {
   if (x.model === 'GRAND VITARA') return 0;
