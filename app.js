@@ -160,8 +160,8 @@ function renderTiers() {
 
 function render() {
   const q = qualification(), t = grossTotals();
-  const deductionAmount = q.deduction ? Math.round(t.gross * OCT_SCHEME.zeroGVReduction) : 0;
-  const finalTotal = q.eligible ? t.gross - deductionAmount : 0;
+  const deductionAmount = q.deduction ? t.gross * OCT_SCHEME.zeroGVReduction : 0;
+  const finalTotal = q.eligible ? Math.round(t.gross - deductionAmount) : 0;
   $('grandTotal').textContent = money(finalTotal);
   $('headTotal').textContent = money(finalTotal);
   $('vehicleCount').textContent = state.sales.length;
