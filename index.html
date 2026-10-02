@@ -24,6 +24,6 @@
     if(t&&s)t.textContent=s.textContent;
   }
   syncBookingHighlight();
-  new MutationObserver(syncBookingHighlight).observe(document.body,{subtree:true,childList:true,characterData:true});
+  var obs=new MutationObserver(syncBookingHighlight); if(p)obs.observe(p,{subtree:true,childList:true,characterData:true}); if(s)obs.observe(s,{subtree:true,childList:true,characterData:true});
 })();
 </script></body></html>
