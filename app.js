@@ -129,7 +129,9 @@ function bookingBonus(count) {
   return values[count - 1] || 0;
 }
 function bookingSpotEligible(x) {
-  return OCT_SCHEME.bookingSpotModels.includes(x.model) && fuelType(x) === 'petrol';
+  /* Creative says Petrol Models Only. CNG is excluded; XL6 is petrol-only,
+     and Fronx Turbo is also petrol-powered. */
+  return OCT_SCHEME.bookingSpotModels.includes(x.model) && fuelType(x) !== 'cng';
 }
 function financeSpotBonus(x) {
   return x.finance === 'Mahindra Finance' || x.finance === 'Chola Finance' ? OCT_SCHEME.financeSpot : 0;
@@ -279,8 +281,9 @@ model.onchange = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   if (model.value) source.filter(x => x.model === model.value).forEach(x => { const option = document.createElement('option'); option.value = x.variant; option.textContent = x.variant; variant.appendChild(option); });
   const sourceVariant = source.find(item => item.model === model.value);
-  const petrolEligible = sourceVariant ? fuelType(sourceVariant) === 'petrol' : false;
-  const spotEligible = ['NEW BALENO','Fronx','GRAND VITARA','XL6'].includes(model.value) && petrolEligible;
+  const modelEligible = OCT_SCHEME.bookingSpotModels.includes(model.value);
+  const petrolEligible = sourceVariant ? fuelType(sourceVariant) !== 'cng' : false;
+  const spotEligible = modelEligible && petrolEligible;
   $('bookingSpot').disabled = !spotEligible;
   $('bookingSpotHint').textContent = spotEligible ? '₹600 • eligible petrol booking' : '₹600 • Baleno / GV / XL6 / Fronx petrol only';
   if (!spotEligible) $('bookingSpot').value = 'No';
@@ -289,6 +292,10 @@ model.onchange = () => {
 variant.onchange = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   const x = source.find(item => item.model === model.value && item.variant === variant.value);
+  const spotEligible = x ? bookingSpotEligible(x) : false;
+  $('bookingSpot').disabled = !spotEligible;
+  $('bookingSpotHint').textContent = spotEligible ? '₹600 • eligible petrol booking' : '₹600 • Baleno / GV / XL6 / Fronx petrol only';
+  if (!spotEligible) $('bookingSpot').value = 'No';
   $('addBtn').disabled = !x; renderPreview(x);
 };
 ['exchange', 'ew', 'gna', 'bookingSpot', 'financeSpot'].forEach(id => $(id).onchange = () => {
