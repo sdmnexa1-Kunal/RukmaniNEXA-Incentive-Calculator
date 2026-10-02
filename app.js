@@ -71,9 +71,11 @@ function groupPosition(x) {
   return state.sales.slice(0, index).filter(s => groupKey(s) === groupKey(x)).length;
 }
 function gvPosition(x) {
+  const fuel = fuelType(x);
   const index = state.sales.findIndex(s => s.id === x.id);
-  if (index < 0) return state.sales.filter(s => s.model === 'GRAND VITARA').length;
-  return state.sales.slice(0, index).filter(s => s.model === 'GRAND VITARA').length;
+  const isSameGVFuel = s => s.model === 'GRAND VITARA' && fuelType(s) === fuel;
+  if (index < 0) return state.sales.filter(isSameGVFuel).length;
+  return state.sales.slice(0, index).filter(isSameGVFuel).length;
 }
 function gvCount() { return state.sales.filter(s => s.model === 'GRAND VITARA').length; }
 function isGVHigh(x) {
