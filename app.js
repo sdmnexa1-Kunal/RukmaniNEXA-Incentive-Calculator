@@ -242,7 +242,7 @@ function render() {
   renderTiers();
   $('salesBody').innerHTML = state.sales.map((x, i) => {
     const c = vehicleCalc(x), locked = q.locked, gna = gnaInfo(x.gnaValue);
-    return `<tr><td>${i + 1}</td><td class="model-name">${esc(x.model)}</td><td class="variant-name">${esc(x.variant)}</td><td>${x.exchange ? 'Yes' : 'No'}</td><td>${x.ew ? 'Yes' : 'No'}</td><td>${gna ? esc(gna.label) : '₹0'}</td><td class="spot-cell">${locked ? '—' : esc(spotDescription(x))}</td><td>${locked ? '—' : money(c.base + c.gvAdd + c.exchange + c.ew + c.gna + c.bookingSpot + c.financeSpot)}</td><td class="step">${locked ? '—' : money(c.step)}</td><td>${locked ? 'Locked' : money(c.total)}</td><td><button class="delete" data-id="${x.id}">×</button></td></tr>`;
+    return `<tr><td>${i + 1}</td><td class="model-name">${esc(x.model)}</td><td class="variant-name">${esc(x.variant)}</td><td>${x.exchange ? 'Yes' : 'No'}</td><td>${x.ew ? 'Yes' : 'No'}</td><td>${gna ? esc(gna.label) : '₹0'}</td><td class="spot-cell">${esc(spotDescription(x))}</td><td>${locked ? 'Qualification locked' : money(c.base + c.gvAdd + c.exchange + c.ew + c.gna + c.bookingSpot + c.financeSpot)}</td><td class="step">${locked ? 'Qualification locked' : money(c.step)}</td><td>${locked ? money(c.bookingSpot + c.financeSpot) + ' spot only' : money(c.total)}</td><td><button class="delete" data-id="${x.id}">×</button></td></tr>`;
   }).join('');
   document.querySelectorAll('.delete').forEach(btn => btn.onclick = () => removeSale(btn.dataset.id));
 }
