@@ -102,8 +102,11 @@ function gvStep(x) {
 }
 function gvAdditional(x) {
   if (x.model !== 'GRAND VITARA') return 0;
-  if (isGVStrongHybrid(x)) return OCT_SCHEME.gvStrongHybrid;
-  return isGVHigh(x) ? OCT_SCHEME.gvHigh : 0;
+  /* GV additional incentives are additive:
+     Strong Hybrid +₹5,000 and High/Sunroof (O) +₹4,000 can both apply. */
+  const strongHybrid = isGVStrongHybrid(x) ? OCT_SCHEME.gvStrongHybrid : 0;
+  const highVariant = isGVHigh(x) ? OCT_SCHEME.gvHigh : 0;
+  return strongHybrid + highVariant;
 }
 function exchangeBonus(x) { return OCT_SCHEME.exchange[x.model] || 0; }
 function gnaInfo(value) {
