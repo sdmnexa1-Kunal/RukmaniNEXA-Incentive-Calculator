@@ -16,14 +16,4 @@
 <div class="actions"><button class="clear-btn" id="resetBtn">↻ Clear all vehicles</button></div>
 </main><footer><div class="footer-brand"><img src="nexa-logo.jpg"><div><b>MARUTI SUZUKI NEXA</b><small>RUKMANI MOTORS</small></div></div><div><b>RM POTENTIAL INCENTIVE SYSTEM</b><small>DRIVEN BY PEOPLE. POWERED BY TRUST.</small></div><div><small>HR: 91095 91336</small></div></footer></div>
 <div class="announcement-backdrop" id="announcementBackdrop" hidden><div class="announcement-modal"><button class="modal-x" id="closeAnnouncement">×</button><img id="announcementImage" hidden><div class="announcement-kicker">RUKMANI NEXA</div><h2 id="announcementTitle"></h2><p id="announcementMessage"></p><button class="gold-btn modal-close-btn" id="closeAnnouncement2">Continue</button></div></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="data.js"></script><script src="app.js"></script><script>
-(function(){
-  function syncBookingHighlight(){
-    var p=document.getElementById('promoPeriod'), a=document.getElementById('bookingPeriodText'), s=document.getElementById('sumBooking'), t=document.getElementById('sumBookingTop');
-    if(a&&p)a.textContent=p.textContent;
-    if(t&&s)t.textContent=s.textContent;
-  }
-  syncBookingHighlight();
-  var obs=new MutationObserver(syncBookingHighlight); if(p)obs.observe(p,{subtree:true,childList:true,characterData:true}); if(s)obs.observe(s,{subtree:true,childList:true,characterData:true});
-})();
-</script></body></html>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="supabase-config.js"></script><script src="data.js"></script><script src="app.js"></script></body></html>
