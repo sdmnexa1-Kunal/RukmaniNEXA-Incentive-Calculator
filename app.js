@@ -233,7 +233,9 @@ variant.onchange = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   const x = source.find(item => item.model === model.value && item.variant === variant.value); renderPreview(x);
 });
-function applyBookingDate(){ if(!bookingDate.value) return; updateSchemeUI(); render(); }\nbookingDate.addEventListener('change', applyBookingDate);\nbookingDate.addEventListener('input', applyBookingDate);
+function applyBookingDate(){ if(!bookingDate.value) return; updateSchemeUI(); render(); }
+bookingDate.addEventListener('change', applyBookingDate);
+bookingDate.addEventListener('input', applyBookingDate);
 $('addBtn').onclick = () => {
   const source = Array.isArray(window.INCENTIVES) ? window.INCENTIVES : [];
   const x = source.find(item => item.model === model.value && item.variant === variant.value); if (!x) return;
