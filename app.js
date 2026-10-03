@@ -133,9 +133,11 @@ function bookingBonus(count) {
   return values[count - 1] || 0;
 }
 function bookingSpotEligible(x) {
-  /* Creative says Petrol Models Only. CNG is excluded; XL6 is petrol-only,
-     and Fronx Turbo is also petrol-powered. */
-  return OCT_SCHEME.bookingSpotModels.includes(x.model) && fuelType(x) !== 'cng';
+  /* Creative says Petrol Models Only. Explicitly exclude CNG variants,
+     including XL6 CNG whose fuelType is otherwise grouped as "all". */
+  const variant = String(x.variant || '').toUpperCase();
+  const isCng = fuelType(x) === 'cng' || variant.includes('CNG');
+  return OCT_SCHEME.bookingSpotModels.includes(x.model) && !isCng;
 }
 function financeSpotBonus(x) {
   return x.finance === 'Mahindra Finance' || x.finance === 'Chola Finance' ? OCT_SCHEME.financeSpot : 0;
