@@ -117,7 +117,11 @@ function gvAdditional(x) {
   const highVariant = isGVHigh(x) ? OCT_SCHEME.gvHigh : 0;
   return strongHybrid + highVariant;
 }
-function exchangeBonus(x) { return OCT_SCHEME.exchange[x.model] || 0; }
+function exchangeBonus(x) {
+  /* October exchange incentive: Fronx Turbo ₹1,000; other Fronx variants ₹500. */
+  if (x.model === 'Fronx') return fuelType(x) === 'turbo' ? 1000 : 500;
+  return OCT_SCHEME.exchange[x.model] || 0;
+}
 function gnaInfo(value) {
   const n = Number(value || 0);
   return OCT_SCHEME.gna.find(row => n >= row.min && n < row.max) || null;
